@@ -1,29 +1,66 @@
 import com.google.gson.Gson;
 import io.restassured.http.ContentType;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import utills.Pet;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.preemptive;
 
 
 public class TestPet {
 
     Pet newpet = new Pet();
     private long ide;
-
+    private String fileName = "Book1";
 
     @BeforeTest
-    public void createPet(){
+    public void getValueFromExce() throws IOException {
+        List<LinkedHashMap<String,String >> extractedValue = new ArrayList<>();
 
-        newpet.setId(1);
-        newpet.setCategory(1,"Dog");
-        newpet.setName("Tiger");
-        newpet.setPhotoUrls(new String[]{"https://www.shutterstock.com/image-photo/close-portrait-angry-tiger-600nw-2320794599.jpg"});
-        newpet.setTags(1,"new German Shepherd");
-        newpet.setStatus("aviavble");
-        Gson gson = new Gson();
-        gson.toJson(newpet);
+        Workbook workbook =  WorkbookFactory.create(new File("src/main/resources/" + fileName  +".xlsx"));
+        Sheet sheet =  workbook.getSheet("Sheet1");
+
+        int rowNumber = sheet.getPhysicalNumberOfRows();
+        List<String> allKeys = new ArrayList<>();
+
+        for (int i =0;i<rowNumber;i++){
+            int totalCols = sheet.getRow(0).getPhysicalNumberOfCells();
+            if(i==0) {
+                for (int j = 0; j < totalCols; j++) {
+                    allKeys.add(sheet.getRow(0).getCell(j).getStringCellValue());
+                }
+            }
+            else{
+                if(sheet.getRow(i).getCell(1).getStringCellValue().equals("Y")){
+                    for (int j = 3; j < totalCols-1; j++) {
+                        newpet.setId(i);
+                        newpet.setCategory(i,sheet.getRow(i).getCell(j).getStringCellValue());
+                        j++;
+                        newpet.setName(sheet.getRow(i).getCell(j).getStringCellValue());
+                        j++;
+                        newpet.setPhotoUrls(new String[]{sheet.getRow(i).getCell(j).getStringCellValue()});
+                        j++;
+                        newpet.setStatus(sheet.getRow(i).getCell(j).getStringCellValue());
+                        j++;
+                        newpet.setTags(i,sheet.getRow(i).getCell(j).getStringCellValue());
+                        j++;
+                        Gson gson = new Gson();
+                        gson.toJson(newpet);
+                    }
+                }
+
+            }
+        }
+
     }
 
     @Test
@@ -38,6 +75,7 @@ public class TestPet {
                 .jsonPath().getInt("id");
 
         System.out.println(ide);
+
     }
 
     @Test(priority = 2)
