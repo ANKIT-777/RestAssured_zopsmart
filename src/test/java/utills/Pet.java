@@ -2,18 +2,19 @@ package utills;
 
 public class Pet {
     private int id;
+    private String[] category;
     private String name;
     private String[] photoUrls;
     private String status;
-    private String Tname;
+    private String[] Tags;
+
 
     public void setId(int id) {
         this.id = id;
     }
 
-    public void setCategory(int id, String catname){
-        this.id = id;
-        this.name = catname;
+    public void setCategory(String[] category){
+        this.category = category;
     }
     public void setName(String name) {
         this.name = name;
@@ -21,16 +22,15 @@ public class Pet {
     public void setPhotoUrls(String[] photoUrls) {
         this.photoUrls = photoUrls;
     }
-    public void setTags(int id,String Tname) {
-        this.id = id;
-        this.Tname = Tname;
+    public void setTags(String[] Tags) {
+        this.Tags = Tags;
     }
 
     public void setStatus(String status) {
         this.status = status;
     }
 
-
 }
+
 
 

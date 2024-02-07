@@ -1,10 +1,15 @@
 import com.google.gson.Gson;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import netscape.javascript.JSObject;
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import utills.Category;
 import utills.Pet;
 import java.io.File;
 import java.io.IOException;
@@ -13,13 +18,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.preemptive;
+import org.json.JSONObject;
+import utills.Tag;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 public class TestPet {
 
     Pet newpet = new Pet();
     private long ide;
+    JSONObject petObject;
     private String fileName = "Book1";
 
     @BeforeTest
@@ -28,6 +37,7 @@ public class TestPet {
 
         Workbook workbook =  WorkbookFactory.create(new File("src/main/resources/" + fileName  +".xlsx"));
         Sheet sheet =  workbook.getSheet("Sheet1");
+
 
         int rowNumber = sheet.getPhysicalNumberOfRows();
         List<String> allKeys = new ArrayList<>();
@@ -41,19 +51,53 @@ public class TestPet {
             }
             else{
                 if(sheet.getRow(i).getCell(1).getStringCellValue().equals("Y")){
-                    for (int j = 3; j < totalCols-1; j++) {
+                    Category category = new Category();
+                    petObject = new JSONObject();
+                    Tag tag = new Tag();
+                    Gson gson = new Gson();
+
+                    for (int j = 3; j < totalCols; j++) {
                         newpet.setId(i);
-                        newpet.setCategory(i,sheet.getRow(i).getCell(j).getStringCellValue());
+                        petObject.put("id", i);
+
+                        JSONObject categoryObject = new JSONObject();
+                        categoryObject.put("id", i);
+                        categoryObject.put("name", sheet.getRow(i).getCell(j).getStringCellValue());
+                        petObject.put("category", categoryObject);
+
+                        newpet.setCategory(new String[]{String.valueOf(category)});
                         j++;
+
+                        petObject.put("name",sheet.getRow(i).getCell(j).getStringCellValue());
                         newpet.setName(sheet.getRow(i).getCell(j).getStringCellValue());
                         j++;
+
+                        JSONArray photoUrlsArray = new JSONArray();
+                        photoUrlsArray.put(sheet.getRow(i).getCell(j).getStringCellValue());
+                        petObject.put("photoUrls", photoUrlsArray);
+
                         newpet.setPhotoUrls(new String[]{sheet.getRow(i).getCell(j).getStringCellValue()});
                         j++;
+
+                        JSONArray tagsArray = new JSONArray();
+                        JSONObject tagObject = new JSONObject();
+
+                        tagObject.put("id", i);
+                        tagObject.put("name", sheet.getRow(i).getCell(j).getStringCellValue());
+                        tagsArray.put(tagObject);
+                        petObject.put("tags", tagsArray);
+                        j++;
+
+                        tag.setId(i);
+                        tag.setName(sheet.getRow(i).getCell(j).getStringCellValue());
+                        System.out.println(String.valueOf(tag));
+                        newpet.setTags(new String[]{String.valueOf(tag)});
+
+                        petObject.put("status",sheet.getRow(i).getCell(j).getStringCellValue());
+                        j++;
+
                         newpet.setStatus(sheet.getRow(i).getCell(j).getStringCellValue());
-                        j++;
-                        newpet.setTags(i,sheet.getRow(i).getCell(j).getStringCellValue());
-                        j++;
-                        Gson gson = new Gson();
+
                         gson.toJson(newpet);
                     }
                 }
@@ -66,19 +110,17 @@ public class TestPet {
     @Test
     public void postPet() {
 
-        ide = given()
-                .baseUri("https://petstore.swagger.io/v2")
+        System.out.println(petObject.toString());
+
+         ide = given()
                 .contentType("application/json")
-                .body(newpet)
+                .body(petObject)
                 .when()
-                .post("/pet")
-                .jsonPath().getInt("id");
-
-        System.out.println(ide);
-
+                .post("https://petstore.swagger.io/v2/pet")
+                 .jsonPath().get("id");
     }
 
-    @Test(priority = 2)
+//    @Test(priority = 2)
     public void uploadImage() {
 
         File image = new File("/Users/ankitsharma/Downloads/pexels-pixabay-162173 (1).jpg");
@@ -95,4 +137,6 @@ public class TestPet {
                 .statusCode(200)
                 .log().all();
     }
+
+
 }
